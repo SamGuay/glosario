@@ -82,7 +82,7 @@ def parseArgs():
         sys.exit(1)
 
     if (len(filenames) != 2):
-        print(f'Usage: check [-A] [-c LL] configFile glossFile')
+        print('Usage: check [-A] [-c LL] configFile glossFile')
         sys.exit(1)
     configFile, glossFile = filenames
 
@@ -101,7 +101,7 @@ def parseArgs():
 
 def checkLanguages(config):
     '''Compare configuration with this script's settings.'''
-    actual = set([c['key'] for c in config['languages']])
+    actual = {c['key'] for c in config['languages']}
     if actual - ENTRY_LANGUAGE_KEYS:
         print(f'unexpected languages in configuration: {actual - ENTRY_LANGUAGE_KEYS}')
     if ENTRY_LANGUAGE_KEYS - actual:
@@ -114,12 +114,10 @@ def checkEntry(entry):
     dictionary of terms references in the body.
     '''
     keys = set(entry.keys())
-    missing = [k for k in ENTRY_REQUIRED_KEYS if k not in keys]
-    if missing:
+    if missing := [k for k in ENTRY_REQUIRED_KEYS if k not in keys]:
         print(f'Missing required keys for entry {entry}: {missing}')
     slug = entry['slug']
-    unknown_keys = keys - ENTRY_KEYS
-    if unknown_keys:
+    if unknown_keys := keys - ENTRY_KEYS:
         print(f'Unknown keys in {slug}: {unknown_keys}')
     if (len(ENTRY_LANGUAGE_KEYS - keys) == len(ENTRY_LANGUAGE_KEYS)):
         print(f'No language entries for entry {entry}')
@@ -138,15 +136,12 @@ def checkLanguageDef(label, crossrefs, definition):
     of terms referenced in the body of the definition.
     '''
     keys = set(definition.keys())
-    missing = [k for k in DEFINITION_REQUIRED_KEYS if k not in keys]
-    if missing:
+    if missing := [k for k in DEFINITION_REQUIRED_KEYS if k not in keys]:
         print(f'Missing required keys for definition {label}: {missing}')
-    unknown_keys = keys - DEFINITION_KEYS
-    if unknown_keys:
+    if unknown_keys := keys - DEFINITION_KEYS:
         print(f'Unknown keys in {label}: {unknown_keys}')
     inBody = set(LINK_PAT.findall(definition['def']))
-    duplicate = crossrefs & inBody
-    if duplicate:
+    if duplicate := crossrefs & inBody:
         duplicate = ', '.join(sorted(duplicate))
         print(f'Terms in both body and cross-references for {label}: {duplicate}')
     return inBody
@@ -159,8 +154,7 @@ def checkSlugs(gloss):
         if (i > 0) and (slug < slugs[i-1]):
             print(f'slug {slug} out of order')
     counts = Counter(slugs)
-    dups = [s for s in counts.keys() if counts[s] > 1]
-    if dups:
+    if dups := [s for s in counts.keys() if counts[s] > 1]:
         print(f'duplicate keys: {dups}')
 
 
@@ -170,8 +164,7 @@ def checkDuplicates(gloss):
         terms = [entry[lang]['term'] for entry in gloss
                  if ((lang in entry) and 'term' in entry[lang])]
         counts = Counter(terms)
-        dups = [s for s in counts.keys() if counts[s] > 1]
-        if dups:
+        if dups := [s for s in counts.keys() if counts[s] > 1]:
             print(f'duplicate definitions for {lang}: {dups}')
 
 
@@ -183,10 +176,8 @@ def checkCrossRef(gloss):
         if 'ref' in entry:
             if not entry['ref']:
                 print(f'{entry["slug"]} has empty "ref" key')
-            else:
-                unknown = [slug for slug in entry['ref'] if slug not in known]
-                if unknown:
-                    print(f'{entry["slug"]} has unknown crossref(s) {", ".join(unknown)}')
+            elif unknown := [slug for slug in entry['ref'] if slug not in known]:
+                print(f'{entry["slug"]} has unknown crossref(s) {", ".join(unknown)}')
 
 
 def checkMissingDefs(lang, gloss):
@@ -211,9 +202,7 @@ def buildForward(gloss):
 
 def buildBackward(forward):
     '''Build graph of backward references, checking for missing terms.'''
-    result = {}
-    for source in forward:
-        result[source] = set()
+    result = {source: set() for source in forward}
     failed = set()
     for source in forward:
         for dest in forward[source]:
